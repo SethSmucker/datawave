@@ -6,9 +6,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.security.util.ScannerHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -27,6 +24,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.security.util.ScannerHelper;
 
 /**
  * Unit test for {@link QueryLogIterator}.
