@@ -1294,7 +1294,7 @@ public class QueryOptions implements OptionDescriber {
      *
      * @param value:
      *            The string value of an option that should be represented by a boolean.
-     * @return: True if the option is null or not "false". False if the option has the value "false" (not case-sensitive).
+     * @return True if the option is null or not "false". False if the option has the value "false" (not case-sensitive).
      */
     private static boolean evaluateBooleanOption(String value) {
         if (value == null) {
