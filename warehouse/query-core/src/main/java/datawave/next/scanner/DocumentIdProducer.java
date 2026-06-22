@@ -111,8 +111,8 @@ public class DocumentIdProducer implements RunnableWithContext {
         scanner.addScanIterator(createIteratorSetting());
 
         if (config.getSearchScanHintTable() != null && config.getSearchScanHintPool() != null) {
-            Preconditions.checkArgument(context.getTableName().equals(config.getRetrievalScanHintTable()), "Table name did not match execution hint");
-            scanner.setExecutionHints(Map.of("scan_type", config.getSearchScanHintPool()));
+            Preconditions.checkArgument(context.getTableName().equals(config.getSearchScanHintTable()), "Table name did not match execution hint");
+            scanner.setExecutionHints(DocumentScanHints.searchHints(config));
         }
 
         if (config.getSearchConsistencyLevel() != null) {

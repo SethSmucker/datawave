@@ -82,6 +82,13 @@ public class DocumentScannerConfig implements Serializable {
     private String retrievalScanHintTable;
     private String retrievalScanHintPool;
 
+    // per-scan block cache policy applied via execution hints; null leaves a hint unset so the table default applies (see SimpleScanDispatcher)
+    private String searchIndexCacheUsage;
+    private String searchDataCacheUsage;
+
+    private String retrievalIndexCacheUsage;
+    private String retrievalDataCacheUsage;
+
     // IMMEDIATE or EVENTUAL
     private String searchConsistencyLevel;
     private String retrievalConsistencyLevel;
@@ -242,6 +249,10 @@ public class DocumentScannerConfig implements Serializable {
                     .append(searchScanHintPool, other.searchScanHintPool)
                     .append(retrievalScanHintTable, other.retrievalScanHintTable)
                     .append(retrievalScanHintPool, other.retrievalScanHintPool)
+                    .append(searchIndexCacheUsage, other.searchIndexCacheUsage)
+                    .append(searchDataCacheUsage, other.searchDataCacheUsage)
+                    .append(retrievalIndexCacheUsage, other.retrievalIndexCacheUsage)
+                    .append(retrievalDataCacheUsage, other.retrievalDataCacheUsage)
                     .append(searchConsistencyLevel, other.searchConsistencyLevel)
                     .append(retrievalConsistencyLevel, other.retrievalConsistencyLevel)
                     .isEquals();
@@ -266,6 +277,10 @@ public class DocumentScannerConfig implements Serializable {
                 .append(searchScanHintPool)
                 .append(retrievalScanHintTable)
                 .append(retrievalScanHintPool)
+                .append(searchIndexCacheUsage)
+                .append(searchDataCacheUsage)
+                .append(retrievalIndexCacheUsage)
+                .append(retrievalDataCacheUsage)
                 .append(searchConsistencyLevel)
                 .append(retrievalConsistencyLevel)
                 .hashCode();
@@ -390,6 +405,38 @@ public class DocumentScannerConfig implements Serializable {
 
     public void setRetrievalScanHintPool(String retrievalScanHintPool) {
         this.retrievalScanHintPool = retrievalScanHintPool;
+    }
+
+    public String getSearchIndexCacheUsage() {
+        return searchIndexCacheUsage;
+    }
+
+    public void setSearchIndexCacheUsage(String searchIndexCacheUsage) {
+        this.searchIndexCacheUsage = searchIndexCacheUsage;
+    }
+
+    public String getSearchDataCacheUsage() {
+        return searchDataCacheUsage;
+    }
+
+    public void setSearchDataCacheUsage(String searchDataCacheUsage) {
+        this.searchDataCacheUsage = searchDataCacheUsage;
+    }
+
+    public String getRetrievalIndexCacheUsage() {
+        return retrievalIndexCacheUsage;
+    }
+
+    public void setRetrievalIndexCacheUsage(String retrievalIndexCacheUsage) {
+        this.retrievalIndexCacheUsage = retrievalIndexCacheUsage;
+    }
+
+    public String getRetrievalDataCacheUsage() {
+        return retrievalDataCacheUsage;
+    }
+
+    public void setRetrievalDataCacheUsage(String retrievalDataCacheUsage) {
+        this.retrievalDataCacheUsage = retrievalDataCacheUsage;
     }
 
     public String getSearchConsistencyLevel() {
