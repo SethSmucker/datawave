@@ -8,6 +8,9 @@ name: deliver-upstream-3656
 # upstream branch is not at the expected pre-delivery head.
 
 on:
+  push:
+    branches:
+      - claude/datawave-token-scope-mwdr04
   workflow_dispatch:
 
 permissions: {}
