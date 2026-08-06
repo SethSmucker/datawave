@@ -1,6 +1,7 @@
 package datawave.accumulo.inmemory;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -191,6 +192,86 @@ public class AccumuloValidatorsTest {
     public void testValidatorThrowsWithDescriptiveMessageForBlankTablePart() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.NEW_TABLE_NAME.validate("namespace."));
         assertTrue(e.getMessage().contains("table part must not be blank"), "Expected blank table part message in: " + e.getMessage());
+    }
+
+    // EXISTING_TABLE_NAME tests
+
+    @Test
+    public void testExistingTableNameValid() {
+        assertDoesNotThrow(() -> AccumuloValidators.EXISTING_TABLE_NAME.validate("myTable"));
+    }
+
+    @Test
+    public void testExistingTableNameValidQualified() {
+        assertDoesNotThrow(() -> AccumuloValidators.EXISTING_TABLE_NAME.validate("namespace.table"));
+    }
+
+    @Test
+    public void testExistingTableNameValidBuiltIn() {
+        assertDoesNotThrow(() -> AccumuloValidators.EXISTING_TABLE_NAME.validate("accumulo.metadata"));
+    }
+
+    @Test
+    public void testExistingTableNameNullInvalid() {
+        assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.EXISTING_TABLE_NAME.validate(null));
+    }
+
+    @Test
+    public void testExistingTableNameEmptyInvalid() {
+        assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.EXISTING_TABLE_NAME.validate(""));
+    }
+
+    @Test
+    public void testExistingTableNameLeadingDotInvalid() {
+        assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.EXISTING_TABLE_NAME.validate(".table"));
+    }
+
+    @Test
+    public void testExistingTableNameBlankTablePartInvalid() {
+        assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.EXISTING_TABLE_NAME.validate("namespace."));
+    }
+
+    @Test
+    public void testExistingTableNameInvalidChars() {
+        assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.EXISTING_TABLE_NAME.validate("my-table"));
+    }
+
+    @Test
+    public void testExistingTableNameTooLong() {
+        assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.EXISTING_TABLE_NAME.validate("a".repeat(1025)));
+    }
+
+    @Test
+    public void testExistingTableNameAtMaxLengthValid() {
+        assertDoesNotThrow(() -> AccumuloValidators.EXISTING_TABLE_NAME.validate("a".repeat(1024)));
+    }
+
+    // qualify tests
+
+    @Test
+    public void testQualifyUnqualifiedNameMapsToDefaultNamespace() {
+        assertEquals("", AccumuloValidators.qualify("myTable").getLeft());
+        assertEquals("myTable", AccumuloValidators.qualify("myTable").getRight());
+    }
+
+    @Test
+    public void testQualifyQualifiedNameSplitsOnDot() {
+        assertEquals("namespace", AccumuloValidators.qualify("namespace.table").getLeft());
+        assertEquals("table", AccumuloValidators.qualify("namespace.table").getRight());
+    }
+
+    @Test
+    public void testQualifyBuiltInTable() {
+        assertEquals("accumulo", AccumuloValidators.qualify("accumulo.metadata").getLeft());
+        assertEquals("metadata", AccumuloValidators.qualify("accumulo.metadata").getRight());
+    }
+
+    @Test
+    public void testQualifyValidatesFirst() {
+        assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.qualify(null));
+        assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.qualify(""));
+        assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.qualify(".table"));
+        assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.qualify("my-table"));
     }
 
     // Constructor test
