@@ -47,24 +47,13 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
     }
 
     /**
-     * Wraps the init() method of the iterator above it, logging the start/end of the method along with its query id.
+     * Stores the query id and source for use by the wrapped methods. Nothing is invoked on the source here, so no start/end logging is done.
      */
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         this.queryID = options.get(QUERY_ID);
         this.source = source;
         this.env = env;
-
-        String oldName = Thread.currentThread().getName();
-        Thread.currentThread().setName(oldName + " -> " + this.queryID);
-        MDC.put("queryID", queryID);
-        try {
-            logStartOf("init()");
-        } finally {
-            logEndOf("init()");
-            Thread.currentThread().setName(oldName);
-            MDC.remove("queryID");
-        }
     }
 
     /**
@@ -86,18 +75,15 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
     }
 
     /**
-     * Wraps the hasTop() method of the iterator above it, logging the start and end of the method along with its query id.
+     * Wraps the hasTop() method of the iterator above it, tagging the thread name and MDC with the query id for any logging the source performs.
      */
     @Override
     public boolean hasTop() {
-        // return source.hasTop();
         String oldName = Thread.currentThread().getName();
         Thread.currentThread().setName(oldName + " -> " + this.queryID);
         MDC.put("queryID", queryID);
         try {
-            boolean result;
-            result = source.hasTop(); // I had to remove the try/catch that was nested here. Why does that partially work?
-            return result;
+            return source.hasTop();
         } finally {
             Thread.currentThread().setName(oldName);
             MDC.remove("queryID");
@@ -110,12 +96,16 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
      */
     @Override
     public void next() throws IOException {
-        // source.next();
         String oldName = Thread.currentThread().getName();
         Thread.currentThread().setName(oldName + " -> " + this.queryID);
         MDC.put("queryID", queryID);
         try {
-            source.next();
+            try {
+                logStartOf("next()");
+                source.next();
+            } finally {
+                logEndOf("next()");
+            }
         } finally {
             Thread.currentThread().setName(oldName);
             MDC.remove("queryID");
@@ -124,17 +114,10 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
     }
 
     /**
-     * Wraps the getTopKey() method of the iterator above it, logging the start and end of the method along with its query id.
+     * Wraps the getTopKey() method of the iterator above it, tagging the thread name and MDC with the query id for any logging the source performs.
      */
     @Override
     public Key getTopKey() {
-        // Key k;
-        // try {
-        // k = source.getTopKey();
-        // } catch (Exception e) {
-        // throw new RuntimeException(e);
-        // }
-        // return k;
         String oldName = Thread.currentThread().getName();
         Thread.currentThread().setName(oldName + " -> " + this.queryID);
         MDC.put("queryID", queryID);
@@ -154,17 +137,10 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
     }
 
     /**
-     * Wraps the getTopValue() method of the iterator above it, logging the start and end of the method along with its query id.
+     * Wraps the getTopValue() method of the iterator above it, tagging the thread name and MDC with the query id for any logging the source performs.
      */
     @Override
     public Value getTopValue() {
-        // Value v;
-        // try {
-        // v = source.getTopValue();
-        // } catch (Exception e) {
-        // throw new RuntimeException(e);
-        // }
-        // return v;
         String oldName = Thread.currentThread().getName();
         Thread.currentThread().setName(oldName + " -> " + this.queryID);
         MDC.put("queryID", queryID);
@@ -184,18 +160,10 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
     }
 
     /**
-     * Wraps the deepCopy() method of the iterator above it, logging the start and end of the method along with its query id.
+     * Wraps the deepCopy() method of the iterator above it, tagging the thread name and MDC with the query id for any logging the source performs.
      */
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment iteratorEnvironment) {
-        // QueryLogIterator copy;
-        //
-        // try {
-        // copy = new QueryLogIterator(this, this.env);
-        // } catch (Exception e) {
-        // throw new RuntimeException(e);
-        // }
-        // return copy;
         String oldName = Thread.currentThread().getName();
         Thread.currentThread().setName(oldName + " -> " + this.queryID);
         MDC.put("queryID", queryID);
