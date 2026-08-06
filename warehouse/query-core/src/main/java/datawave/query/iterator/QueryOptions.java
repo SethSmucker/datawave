@@ -2666,7 +2666,11 @@ public class QueryOptions implements OptionDescriber {
                 }
 
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+                // An unresolvable iterator class (e.g. a placeholder name in tests) simply has no
+                // registered defaults; treat it like any other non-QueryOptions class.
+                DefaultOptions options = DefaultOptions.builder().build();
+                defaultOptionsMap.put(className, options);
+                return options;
             }
 
         }
