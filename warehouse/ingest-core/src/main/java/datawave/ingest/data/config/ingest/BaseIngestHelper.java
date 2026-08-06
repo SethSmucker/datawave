@@ -452,7 +452,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
     }
 
-    private void moveToPatternMap(Set<String> in, Map<String,Pattern> out) {
+    protected void moveToPatternMap(Set<String> in, Map<String,Pattern> out) {
         for (Iterator<String> itr = in.iterator(); itr.hasNext();) {
             String str = itr.next();
             if (str.indexOf('*') != -1) {
