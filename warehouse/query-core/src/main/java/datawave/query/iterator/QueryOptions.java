@@ -1,5 +1,7 @@
 package datawave.query.iterator;
 
+import static org.apache.commons.lang.StringUtils.isBlank;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -2211,7 +2213,7 @@ public class QueryOptions implements OptionDescriber {
     public static Set<String> buildFieldSetFromString(String fieldStr) {
         Set<String> fields = new HashSet<>();
         for (String field : fieldStr.split(",")) {
-            if (!org.apache.commons.lang.StringUtils.isBlank(field)) {
+            if (!isBlank(field)) {
                 fields.add(field);
             }
         }
@@ -2728,7 +2730,7 @@ public class QueryOptions implements OptionDescriber {
         // Otherwise convert it, and if blank and blank values allowed, change it to something else, or it will fail in InputFormatBase when run through the
         // MapReduce api.
         String valueString = valueTransformer.apply(value);
-        if (allowBlankValues && org.apache.commons.lang.StringUtils.isBlank(valueString)) {
+        if (allowBlankValues && isBlank(valueString)) {
             valueString = " ";
         }
         setting.addOption(option, valueString);
@@ -2745,10 +2747,6 @@ public class QueryOptions implements OptionDescriber {
     protected static final class DefaultOptions {
 
         private final Map<String,Object> defaultValues;
-
-        private DefaultOptions() {
-            this.defaultValues = MapUtils.unmodifiableMap(new HashMap<>());
-        }
 
         /**
          * @param defaultValues
@@ -2836,21 +2834,6 @@ public class QueryOptions implements OptionDescriber {
             public Builder putDefaultValues(Map<String,Object> values) {
                 values.forEach(this::putDefaultValue);
                 return this;
-            }
-
-            public boolean hasDefaultValue(String option) {
-                return values.containsKey(option);
-            }
-
-            public boolean equalsDefaultValue(String option, Object value) {
-                if (hasDefaultValue(option)) {
-                    Object defaultValue = values.get(option);
-                    if (defaultValue.getClass().isAssignableFrom(Collection.class)) {
-                        value = Collections.unmodifiableCollection((Collection<?>) value);
-                    }
-                    return values.get(option).equals(value);
-                }
-                return false;
             }
 
             /**
