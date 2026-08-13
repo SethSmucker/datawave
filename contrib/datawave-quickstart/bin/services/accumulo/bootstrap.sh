@@ -54,7 +54,8 @@ DW_ACCUMULO_SYMLINK="accumulo"
 DW_ACCUMULO_INSTANCE_NAME="my-instance-01"
 DW_ACCUMULO_PASSWORD="${DW_ACCUMULO_PASSWORD:-secret}"
 
-alias ashell="accumulo shell -u root -p \${DW_ACCUMULO_PASSWORD}"
+# Accumulo 4 dropped the shell's -u/-p options; credentials come from accumulo-client.properties
+alias ashell="accumulo shell"
 
 # Note that example configuration is provided for setting up VFS classpath for DataWave jars,
 # but it is disabled by default, as it doesn't really buy you anything on a standalone cluster.
@@ -79,13 +80,7 @@ instance.secret=${DW_ACCUMULO_PASSWORD}
 tserver.memory.maps.native.enabled=false
 tserver.memory.maps.max=385M
 tserver.cache.data.size=64M
-tserver.cache.index.size=64M
-
-## Trace user
-trace.user=root
-
-## Trace password
-trace.password=${DW_ACCUMULO_PASSWORD}"
+tserver.cache.index.size=64M"
 
 if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
   DW_ACCUMULO_PROPERTIES="${DW_ACCUMULO_PROPERTIES}
@@ -118,7 +113,8 @@ DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="ps -ef | grep 'zookeeper.server.quorum.QuorumPee
 
 DW_ACCUMULO_CMD_START="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster start )"
 DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster stop )"
-DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'o.start.Main manager|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
+# Accumulo 4 runs server processes as 'accumulo proc <name>'; tracer is gone, sserver/compactor are new
+DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'o.start.Main proc manager|o.start.Main proc tserver|o.start.Main proc monitor|o.start.Main proc gc|o.start.Main proc sserver|o.start.Main proc compactor'"
 
 function bootstrapAccumulo() {
     if [ ! -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_DIST}" ]; then
