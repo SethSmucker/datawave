@@ -93,7 +93,7 @@ if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" == true ]; then
       ${HADOOP_HOME}/bin/hdfs dfs -put -f ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext/*.jar ${DW_ACCUMULO_VFS_DATAWAVE_DIR}
    fi
 else
-   mkdir "${ACCUMULO_HOME}/lib/ext"
+   mkdir -p "${ACCUMULO_HOME}/lib/ext"
    [ ! -d ${ACCUMULO_HOME}/lib/ext ] && fatal "Unable to update Accumulo classpath. ${ACCUMULO_HOME}/lib/ext does not exist!" && exit 1
    info "Removing any existing jars from ${ACCUMULO_HOME}/lib/ext"
    rm -f ${ACCUMULO_HOME}/lib/ext/*.jar

@@ -99,6 +99,9 @@ assertCreateDir "${DW_ACCUMULO_JVM_HEAPDUMP_DIR}" || exit 1
 # Per-process heap sizes are left at the template's quickstart-friendly defaults.
 sed -i'' -e "s~/path/to/hadoop~${HADOOP_HOME}~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 sed -i'' -e "s~/path/to/zookeeper~${ZOOKEEPER_HOME}~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+# Serve DataWave jars from lib/ext: Accumulo 4 removed VFS context classloading,
+# so lib/ext must be on the server classpath explicitly
+sed -i'' -e 's~:${lib}/\*:~:${lib}/*:${lib}/ext/*:~' "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 echo "export JAVA_HOME=\"${JAVA_HOME}\"" >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 echo "export PATH=\"\${JAVA_HOME}/bin:\${PATH}\"" >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 echo 'JAVA_OPTS=('-Dcom.google.protobuf.use_unsafe_pre22_gencode' "${JAVA_OPTS[@]}")' >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"

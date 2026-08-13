@@ -57,13 +57,15 @@ DW_ACCUMULO_PASSWORD="${DW_ACCUMULO_PASSWORD:-secret}"
 # Accumulo 4 dropped the shell's -u/-p options; credentials come from accumulo-client.properties
 alias ashell="accumulo shell"
 
-# Note that example configuration is provided for setting up VFS classpath for DataWave jars,
-# but it is disabled by default, as it doesn't really buy you anything on a standalone cluster.
-# To enable, set DW_ACCUMULO_VFS_DATAWAVE_ENABLED to true. If enabled, just be aware that
-# writing all the DataWave jars to HDFS will probably slow down your install significantly
-
+# Accumulo 4 removed VFS/context classloading (general.vfs.context.classpath.*);
+# DataWave jars are served from \${ACCUMULO_HOME}/lib/ext, which install.sh puts
+# on the server classpath in accumulo-env.sh
 DW_ACCUMULO_VFS_DATAWAVE_ENABLED=${DW_ACCUMULO_VFS_DATAWAVE_ENABLED:-false}
 DW_ACCUMULO_VFS_DATAWAVE_DIR="/datawave/accumulo-vfs-classpath"
+if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
+  warn "DW_ACCUMULO_VFS_DATAWAVE_ENABLED is not supported with Accumulo 4 (VFS classloading was removed); using lib/ext instead"
+  DW_ACCUMULO_VFS_DATAWAVE_ENABLED=false
+fi
 
 # accumulo.properties (Format: <property-name>=<property-value>{<newline>})
 
@@ -81,14 +83,6 @@ tserver.memory.maps.native.enabled=false
 tserver.memory.maps.max=385M
 tserver.cache.data.size=64M
 tserver.cache.index.size=64M"
-
-if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
-  DW_ACCUMULO_PROPERTIES="${DW_ACCUMULO_PROPERTIES}
-general.vfs.context.classpath.datawave=${DW_HADOOP_DFS_URI_CLIENT}${DW_ACCUMULO_VFS_DATAWAVE_DIR}/.*.jar"
-else
-  DW_ACCUMULO_PROPERTIES="${DW_ACCUMULO_PROPERTIES}
-general.vfs.context.classpath.extlib=file://${ACCUMULO_HOME}/lib/ext/.*.jar"
-fi
 
 # shellcheck disable=SC2034
 DW_ACCUMULO_CLIENT_CONF="instance.name=${DW_ACCUMULO_INSTANCE_NAME}

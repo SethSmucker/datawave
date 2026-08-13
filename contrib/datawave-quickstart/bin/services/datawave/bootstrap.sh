@@ -68,21 +68,13 @@ function createAccumuloShellInitScript() {
 
    # Create script and add 'datawave' VFS context, if enabled...
 
+   # No table.class.loader.context here: Accumulo 4 removed named VFS contexts,
+   # and the quickstart serves DataWave jars from the server classpath (lib/ext)
    DW_ACCUMULO_SHELL_INIT_SCRIPT="
    createnamespace datawave
    createtable datawave.queryMetrics_m
    createtable datawave.queryMetrics_s
-   setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}"
-
-   if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
-      DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
-   config -s table.class.loader.context=datawave"
-   else
-      DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
-   config -s table.class.loader.context=extlib"
-   fi
-
-   DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
+   setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}
    quit
    "
 }
