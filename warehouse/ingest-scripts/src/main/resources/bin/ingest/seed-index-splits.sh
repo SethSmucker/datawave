@@ -26,4 +26,5 @@ addsplits -t ${SHARD_STATS_TABLE_NAME} -sf $file
 addsplits -t ${SHARD_REVERSE_INDEX_TABLE_NAME} -sf $file
 quit" > $script
 
-$WAREHOUSE_ACCUMULO_BIN/accumulo shell -u $USERNAME -p $PASSWORD -f $script
+# Accumulo 4 dropped the shell's -u/-p options; auth comes from accumulo-client.properties
+$WAREHOUSE_ACCUMULO_BIN/accumulo shell -f $script
