@@ -82,7 +82,13 @@ instance.secret=${DW_ACCUMULO_PASSWORD}
 tserver.memory.maps.native.enabled=false
 tserver.memory.maps.max=385M
 tserver.cache.data.size=64M
-tserver.cache.index.size=64M"
+tserver.cache.index.size=64M
+
+## Scan servers size their caches as a percentage of heap by default, which
+## outgrows the quickstart's small JVMs; pin them like the tserver caches
+sserver.cache.data.size=64M
+sserver.cache.index.size=64M
+sserver.cache.summary.size=32M"
 
 # shellcheck disable=SC2034
 DW_ACCUMULO_CLIENT_CONF="instance.name=${DW_ACCUMULO_INSTANCE_NAME}
