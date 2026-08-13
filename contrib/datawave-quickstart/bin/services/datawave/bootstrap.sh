@@ -69,11 +69,15 @@ function createAccumuloShellInitScript() {
    # Create script and add 'datawave' VFS context, if enabled...
 
    # No table.class.loader.context here: Accumulo 4 removed named VFS contexts,
-   # and the quickstart serves DataWave jars from the server classpath (lib/ext)
+   # and the quickstart serves DataWave jars from the server classpath (lib/ext).
+   # setavailability: Accumulo 4 tablets default to ONDEMAND; DataWave expects
+   # its tables hosted (TableOperations.locate() requires HOSTED tablets)
    DW_ACCUMULO_SHELL_INIT_SCRIPT="
    createnamespace datawave
    createtable datawave.queryMetrics_m
+   setavailability -t datawave.queryMetrics_m -a HOSTED
    createtable datawave.queryMetrics_s
+   setavailability -t datawave.queryMetrics_s -a HOSTED
    setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}
    quit
    "
