@@ -14,7 +14,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
-import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
@@ -24,6 +23,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheLoader;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.util.AccumuloTableConstants;
 import datawave.query.util.Tuple2;
 import datawave.scan.ScannerBuilder;
 
@@ -60,7 +60,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
 
         //  @formatter:off
         ScannerBuilder builder = ScannerBuilder.create(client)
-                .setTableName(MetadataTable.NAME)
+                .setTableName(AccumuloTableConstants.METADATA_TABLE_NAME)
                 .setAuthorizations(Authorizations.EMPTY);
         //  @formatter:on
 

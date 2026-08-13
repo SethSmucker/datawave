@@ -49,7 +49,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
 import org.apache.accumulo.core.manager.state.tables.TableState;
-import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -81,6 +80,7 @@ import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
+import datawave.accumulo.util.AccumuloTableConstants;
 import datawave.common.util.ArgumentChecker;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.mr.bulk.split.DefaultLocationStrategy;
@@ -946,7 +946,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     startRow = new Text();
 
                 Range metadataRange = new Range(new KeyExtent(TableId.of(tableId), startRow, null).toMetaRow(), true, null, false);
-                Scanner scanner = ScannerBuilder.create(client).setTableName(MetadataTable.NAME).setAuthorizations(Authorizations.EMPTY).build();
+                Scanner scanner = ScannerBuilder.create(client).setTableName(AccumuloTableConstants.METADATA_TABLE_NAME).setAuthorizations(Authorizations.EMPTY)
+                                .build();
                 MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
                 scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
                 scanner.fetchColumnFamily(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME);
