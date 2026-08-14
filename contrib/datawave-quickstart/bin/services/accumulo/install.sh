@@ -93,10 +93,20 @@ fi
 
 assertCreateDir "${DW_ACCUMULO_JVM_HEAPDUMP_DIR}" || exit 1
 
-# Update tserver and other options in accumulo-env.sh
-sed -i'' -e "s~\(ACCUMULO_TSERVER_OPTS=\).*$~\1\"${DW_ACCUMULO_TSERVER_OPTS}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
-sed -i'' -e "s~\(export JAVA_HOME=\).*$~\1\"${JAVA_HOME}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
-sed -i'' -e "s~\(export ACCUMULO_MONITOR_OPTS=\).*$~\1\"\${POLICY} -Xmx2g -Xms512m\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+# Point accumulo-env.sh at our Hadoop/ZooKeeper installs and JDK. Accumulo 4's
+# template no longer carries the ACCUMULO_*_OPTS/JAVA_HOME anchors the old seds
+# targeted, and accumulo-cluster launches server processes over ssh, where
+# exports from the invoking shell do not reach them.
+sed -i'' -e "s~/path/to/hadoop~${HADOOP_HOME}~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+sed -i'' -e "s~/path/to/zookeeper~${ZOOKEEPER_HOME}~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+# Serve DataWave jars from lib/ext: Accumulo 4 removed VFS context classloading,
+# so lib/ext must be on the server classpath explicitly
+sed -i'' -e 's~:${lib}/\*:~:${lib}/*:${lib}/ext/*:~' "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+# The scan server validates the configured tserver memory/cache settings; the
+# template's 512m sserver heap is too small for them, so match the tserver's
+sed -i'' -e "s~sserver) JAVA_OPTS=('-Xmx512m' '-Xms512m'~sserver) JAVA_OPTS=('-Xmx768m' '-Xms768m'~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+echo "export JAVA_HOME=\"${JAVA_HOME}\"" >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+echo "export PATH=\"\${JAVA_HOME}/bin:\${PATH}\"" >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 echo 'JAVA_OPTS=('-Dcom.google.protobuf.use_unsafe_pre22_gencode' "${JAVA_OPTS[@]}")' >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 cat "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 # Update Accumulo bind host if it's not set to localhost

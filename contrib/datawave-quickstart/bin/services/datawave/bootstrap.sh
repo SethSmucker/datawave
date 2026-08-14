@@ -32,7 +32,16 @@ DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-dev}
 DW_BUILD_CACHE_OPTIONS=${DW_BUILD_CACHE_OPTIONS:--Dmaven.build.cache.enabled=false}
 
 # Maven command
-DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -DskipTests -DskipITs ${DW_BUILD_CACHE_OPTIONS} clean package --builder smart -T1.0C}"
+#
+# -Dutils, -Dservices and -Dstarters activate property-gated profiles that add
+# modules the default reactor depends on but cannot resolve otherwise: the utils
+# profile builds core/in-memory-accumulo (needed by common-test and
+# core/connection-pool), the services profile builds the microservice APIs
+# (core/connection-pool and web-services need accumulo-api), and the starters
+# profile builds the spring-boot starters the services themselves depend on.
+# None of those 8.0.0-SNAPSHOT artifacts is published, so omitting the flags
+# fails the build at dependency resolution.
+DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -DskipTests -DskipITs -Dutils -Dservices -Dstarters ${DW_BUILD_CACHE_OPTIONS} clean package --builder smart -T1.0C}"
 
 # Home of any temp data and *.properties file overrides for this instance of DataWave
 
@@ -68,21 +77,17 @@ function createAccumuloShellInitScript() {
 
    # Create script and add 'datawave' VFS context, if enabled...
 
+   # No table.class.loader.context here: Accumulo 4 removed named VFS contexts,
+   # and the quickstart serves DataWave jars from the server classpath (lib/ext).
+   # setavailability: Accumulo 4 tablets default to ONDEMAND; DataWave expects
+   # its tables hosted (TableOperations.locate() requires HOSTED tablets)
    DW_ACCUMULO_SHELL_INIT_SCRIPT="
    createnamespace datawave
    createtable datawave.queryMetrics_m
+   setavailability -t datawave.queryMetrics_m -a HOSTED
    createtable datawave.queryMetrics_s
-   setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}"
-
-   if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
-      DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
-   config -s table.class.loader.context=datawave"
-   else
-      DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
-   config -s table.class.loader.context=extlib"
-   fi
-
-   DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
+   setavailability -t datawave.queryMetrics_s -a HOSTED
+   setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}
    quit
    "
 }
