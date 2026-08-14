@@ -86,6 +86,10 @@ function verifyChecksum() {
   # $2 - service directory
   # $3 - tarball sha512 checksum
   local tarballName="$(basename "$1")"
+  if [[ -z "$3" ]] ; then
+      warn "No sha512 checksum configured for ${tarballName}. Skipping verification"
+      return 0
+  fi
   if [[ -f "$2/${tarballName}" ]]; then
       local calculatedChecksum="$( cd $2 && sha512sum ${tarballName} )"
       if [[ "${calculatedChecksum}" = "$3  ${tarballName}" ]] ; then

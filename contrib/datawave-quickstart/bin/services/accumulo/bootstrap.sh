@@ -16,7 +16,10 @@ DW_ACCUMULO_SERVICE_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 DW_ZOOKEEPER_VERSION="${DW_ZOOKEEPER_VERSION:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.zookeeper | tail -1)}"
 DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.zookeeper | tail -1)}"
 DW_ACCUMULO_VERSION="${DW_ACCUMULO_VERSION:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.accumulo | tail -1)}"
-DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.accumulo | tail -1)}"
+# Keep the pinned value separately so we can tell a user-supplied checksum from the
+# pom's, even when env.sh is re-sourced into a shell that already has these set
+DW_ACCUMULO_DIST_SHA512_CHECKSUM_POM="$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.accumulo | tail -1)"
+DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-${DW_ACCUMULO_DIST_SHA512_CHECKSUM_POM}}"
 
 # Zookeeper config
 DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://dlcdn.apache.org/zookeeper/zookeeper-${DW_ZOOKEEPER_VERSION}/apache-zookeeper-${DW_ZOOKEEPER_VERSION}-bin.tar.gz}"
@@ -47,7 +50,10 @@ admin.enableServer=false"
 
 # Accumulo config
 
-DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://dlcdn.apache.org/accumulo/${DW_ACCUMULO_VERSION}/accumulo-${DW_ACCUMULO_VERSION}-bin.tar.gz}"
+# Keep the default separately so we can tell a user-supplied distribution from the
+# pinned one, even when env.sh is re-sourced into a shell that already has these set
+DW_ACCUMULO_DIST_URI_DEFAULT="https://dlcdn.apache.org/accumulo/${DW_ACCUMULO_VERSION}/accumulo-${DW_ACCUMULO_VERSION}-bin.tar.gz"
+DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-${DW_ACCUMULO_DIST_URI_DEFAULT}}"
 DW_ACCUMULO_DIST="$( basename "${DW_ACCUMULO_DIST_URI}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"
 DW_ACCUMULO_SYMLINK="accumulo"
@@ -116,7 +122,49 @@ DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster stop )"
 # Accumulo 4 runs server processes as 'accumulo proc <name>'; tracer is gone, sserver/compactor are new
 DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'o.start.Main proc manager|o.start.Main proc tserver|o.start.Main proc monitor|o.start.Main proc gc|o.start.Main proc sserver|o.start.Main proc compactor'"
 
+# The quickstart pins its own Accumulo tarball (version.quickstart.accumulo)
+# independently of the Accumulo version DataWave is compiled against
+# (version.accumulo). When DataWave targets a major version that has no published
+# quickstart tarball -- as on the Accumulo 4 branches -- the two disagree, and
+# installing the pinned tarball would silently give you a server that DataWave
+# cannot talk to. Detect that here and explain how to supply a distribution.
+function assertAccumuloDistributionIsCompatible() {
+    if [ "${DW_ACCUMULO_DIST_URI}" != "${DW_ACCUMULO_DIST_URI_DEFAULT}" ] ; then
+        info "Using user-supplied Accumulo distribution: ${DW_ACCUMULO_DIST_URI}"
+        # A user-built tarball will not match the sha512 pinned for the default
+        # download, so only verify when the user supplied a checksum of their own
+        [ "${DW_ACCUMULO_DIST_SHA512_CHECKSUM}" == "${DW_ACCUMULO_DIST_SHA512_CHECKSUM_POM}" ] && DW_ACCUMULO_DIST_SHA512_CHECKSUM=""
+        return 0
+    fi
+
+    local sourceRoot="$( cd "${DW_CLOUD_HOME}/../.." && pwd )"
+    local projectVersion="$( mvn -o -q -f "${sourceRoot}/pom.xml" help:evaluate -DforceStdout -Dexpression=version.accumulo 2>/dev/null | tail -1 )"
+
+    # If the version can't be resolved (e.g. offline without a primed repo), don't block the install
+    [[ -z "${projectVersion}" || "${projectVersion}" == *"invalid expression"* ]] && return 0
+    [ "${projectVersion%%.*}" == "${DW_ACCUMULO_VERSION%%.*}" ] && return 0
+
+    error "------------------------------------------------------------------------"
+    error "DataWave is built against Accumulo ${projectVersion}, but the quickstart is"
+    error "pinned to Accumulo ${DW_ACCUMULO_VERSION} (version.quickstart.accumulo in"
+    error "contrib/datawave-quickstart/docker/pom.xml)."
+    error ""
+    error "No quickstart tarball is published for Accumulo ${projectVersion}, so build one"
+    error "and point the quickstart at it:"
+    error ""
+    error "  git clone https://github.com/apache/accumulo && cd accumulo"
+    error "  mvn -Passemble -DskipTests clean package   # building Accumulo 4 requires JDK 21+"
+    error "  export DW_ACCUMULO_DIST_URI=file:///path/to/accumulo-${projectVersion}-bin.tar.gz"
+    error ""
+    error "Checksum verification is skipped for a user-supplied distribution unless"
+    error "DW_ACCUMULO_DIST_SHA512_CHECKSUM is also set."
+    error "------------------------------------------------------------------------"
+    fatal "Accumulo version mismatch: quickstart ${DW_ACCUMULO_VERSION} vs project ${projectVersion}"
+    return 1
+}
+
 function bootstrapAccumulo() {
+    assertAccumuloDistributionIsCompatible || return 1
     if [ ! -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_DIST}" ]; then
         info "Accumulo distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || \
