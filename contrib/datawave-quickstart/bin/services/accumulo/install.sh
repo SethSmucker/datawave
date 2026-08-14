@@ -93,10 +93,21 @@ fi
 
 assertCreateDir "${DW_ACCUMULO_JVM_HEAPDUMP_DIR}" || exit 1
 
-# Update tserver and other options in accumulo-env.sh
-sed -i'' -e "s~\(ACCUMULO_TSERVER_OPTS=\).*$~\1\"${DW_ACCUMULO_TSERVER_OPTS}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
-sed -i'' -e "s~\(export JAVA_HOME=\).*$~\1\"${JAVA_HOME}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
-sed -i'' -e "s~\(export ACCUMULO_MONITOR_OPTS=\).*$~\1\"\${POLICY} -Xmx2g -Xms512m\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+# Point accumulo-env.sh at our Hadoop/ZooKeeper installs and JDK. Accumulo's
+# server processes are launched via ssh by accumulo-cluster, so exports from
+# the invoking shell don't reach them — the values must live in accumulo-env.sh.
+# Per-process heap sizes are left at the template's quickstart-friendly defaults.
+sed -i'' -e "s~/path/to/hadoop~${HADOOP_HOME}~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+sed -i'' -e "s~/path/to/zookeeper~${ZOOKEEPER_HOME}~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+# Serve DataWave jars from lib/ext: Accumulo 4 removed VFS context classloading,
+# so lib/ext must be on the server classpath explicitly
+sed -i'' -e 's~:${lib}/\*:~:${lib}/*:${lib}/ext/*:~' "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+# The scan server validates the same tserver.memory.maps/cache settings as the
+# tserver; the template's 512m sserver heap is too small for the quickstart's
+# configuration (fails at startup), so give it the tserver's heap size
+sed -i'' -e "s~sserver) JAVA_OPTS=('-Xmx512m' '-Xms512m'~sserver) JAVA_OPTS=('-Xmx768m' '-Xms768m'~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+echo "export JAVA_HOME=\"${JAVA_HOME}\"" >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+echo "export PATH=\"\${JAVA_HOME}/bin:\${PATH}\"" >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 echo 'JAVA_OPTS=('-Dcom.google.protobuf.use_unsafe_pre22_gencode' "${JAVA_OPTS[@]}")' >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 cat "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 # Update Accumulo bind host if it's not set to localhost
@@ -126,8 +137,8 @@ if [ -n "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" ] && [ "${DW_ACCUMULO_VFS_DATAWAVE_ENA
    "${HADOOP_HOME}/bin/hdfs" dfs -mkdir -p "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" || ( fatal "Failed to create ${DW_ACCUMULO_VFS_DATAWAVE_DIR}" && exit 1 )
 fi
 
-# Initialize Accumulo
-"${ACCUMULO_HOME}/bin/accumulo" init \
+# Initialize Accumulo ('init' moved under the 'inst' command group in Accumulo 4)
+"${ACCUMULO_HOME}/bin/accumulo" inst init \
  --clear-instance-name \
  --instance-name "${DW_ACCUMULO_INSTANCE_NAME}" \
  --password "${DW_ACCUMULO_PASSWORD}" || ( fatal "Failed to initialize Accumulo" && exit 1 )

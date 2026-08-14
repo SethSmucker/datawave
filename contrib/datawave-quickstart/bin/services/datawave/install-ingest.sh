@@ -93,7 +93,7 @@ if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" == true ]; then
       ${HADOOP_HOME}/bin/hdfs dfs -put -f ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext/*.jar ${DW_ACCUMULO_VFS_DATAWAVE_DIR}
    fi
 else
-   mkdir "${ACCUMULO_HOME}/lib/ext"
+   mkdir -p "${ACCUMULO_HOME}/lib/ext"
    [ ! -d ${ACCUMULO_HOME}/lib/ext ] && fatal "Unable to update Accumulo classpath. ${ACCUMULO_HOME}/lib/ext does not exist!" && exit 1
    info "Removing any existing jars from ${ACCUMULO_HOME}/lib/ext"
    rm -f ${ACCUMULO_HOME}/lib/ext/*.jar
@@ -128,7 +128,8 @@ if [ "${DW_REDEPLOY_IN_PROGRESS}" == true ] ; then
 fi
 
 if [ "${OK_TO_EXEC_INIT_SCRIPT}" == true ] ; then
-    ${ACCUMULO_HOME}/bin/accumulo shell -u root -p "${DW_ACCUMULO_PASSWORD}" -f "${ACCUMULO_TMP_SCRIPT}" || ( fatal "Failed to execute $ACCUMULO_TMP_SCRIPT on Accumulo!" && exit 1 )
+    # Accumulo 4 dropped the shell's short -p option; --password replaces it
+    ${ACCUMULO_HOME}/bin/accumulo shell --user root --password "${DW_ACCUMULO_PASSWORD}" -f "${ACCUMULO_TMP_SCRIPT}" || ( fatal "Failed to execute $ACCUMULO_TMP_SCRIPT on Accumulo!" && exit 1 )
 fi
 
 # ----------------------
@@ -143,9 +144,13 @@ else
    error "Unable to write ingest-passwd.sh, missing ${DW_DATAWAVE_INGEST_CONFIG_HOME} directory"
 fi
 
-[ ! -d "${DW_DATAWAVE_INGEST_LOG_DIR}" ] && assertCreateDir "${DW_DATAWAVE_INGEST_LOG_DIR}" || exit 1
-[ ! -d "${DW_DATAWAVE_INGEST_FLAGFILE_DIR}" ] && assertCreateDir "${DW_DATAWAVE_INGEST_FLAGFILE_DIR}" || exit 1
-[ ! -d "${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" ] && assertCreateDir "${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" || exit 1
+# Note: '[ ! -d X ] && create || exit' would exit whenever the directory already
+# exists (the && chain is false), killing re-installs against a persistent data dir
+for _dwDir in "${DW_DATAWAVE_INGEST_LOG_DIR}" "${DW_DATAWAVE_INGEST_FLAGFILE_DIR}" "${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" ; do
+   if [ ! -d "${_dwDir}" ] ; then
+      assertCreateDir "${_dwDir}" || exit 1
+   fi
+done
 
 OK_TO_LOAD_JOB_CACHE=true
 if [ "${DW_REDEPLOY_IN_PROGRESS}" == true ] ; then

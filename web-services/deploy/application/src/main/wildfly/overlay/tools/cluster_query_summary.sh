@@ -64,7 +64,7 @@ fi
 ########### Top 10 User Summary ####################
 
 OUTPUT_FILE=${OUTPUT_DIR}/top_users_summary_${SDAY}_${EDAY}.txt
-/opt/accumulo/current/bin/accumulo shell -u ${AC_USER} -p ${AC_PASS} -e "scan -t QueryAuditTable -b ${SDAY} -e ${EDAY}~ -np" | sed 's/T[0-9][0-9]:.*\[userDN://g; s/,.*, auditType:.*$//g' | sort | uniq -c | sort -nr |sort -nr > $OUTPUT_FILE
+/opt/accumulo/current/bin/accumulo shell --user ${AC_USER} --password ${AC_PASS} -e "scan -t QueryAuditTable -b ${SDAY} -e ${EDAY}~ -np" | sed 's/T[0-9][0-9]:.*\[userDN://g; s/,.*, auditType:.*$//g' | sort | uniq -c | sort -nr |sort -nr > $OUTPUT_FILE
 `chmod 664 ${OUTPUT_FILE}`
 
 unique_total=`cat ${OUTPUT_FILE} | awk '{print $3}' | sort | uniq | wc -l`
@@ -117,7 +117,7 @@ echo ""
 ########### System From Summary ####################
 
 OUTPUT_FILE=${OUTPUT_DIR}/system_from_summary_${SDAY}_${EDAY}.txt
-/opt/accumulo/current/bin/accumulo shell -u ${AC_USER} -p ${AC_PASS} -e "scan -t QueryAuditTable -b ${SDAY} -e ${EDAY}~ -np" | sed 's/T[0-9][0-9]:.* systemFrom://g; s/, purpose:.*$//g' | sort | uniq -c | sort -nr |sort -nr > $OUTPUT_FILE
+/opt/accumulo/current/bin/accumulo shell --user ${AC_USER} --password ${AC_PASS} -e "scan -t QueryAuditTable -b ${SDAY} -e ${EDAY}~ -np" | sed 's/T[0-9][0-9]:.* systemFrom://g; s/, purpose:.*$//g' | sort | uniq -c | sort -nr |sort -nr > $OUTPUT_FILE
 `chmod 664 ${OUTPUT_FILE}`
 unique_system_from=`cat ${OUTPUT_FILE} | awk '{print $3}' | sort | uniq | wc -l`
 if [[ "${BYDAY}" == "1" ]]; then
@@ -135,7 +135,7 @@ echo ""
 ########### Query Logic Summary ####################
 
 OUTPUT_FILE=${OUTPUT_DIR}/query_logic_summary_${SDAY}_${EDAY}.txt
-/opt/accumulo/current/bin/accumulo shell -u ${AC_USER} -p ${AC_PASS} -e "scan -t QueryAuditTable -b ${SDAY} -e ${EDAY}~ -np" | sed 's/T[0-9][0-9]:.* logicClass://g; s/, auditType:.*$//g' | sort | uniq -c | sort -nr |sort -nr > $OUTPUT_FILE
+/opt/accumulo/current/bin/accumulo shell --user ${AC_USER} --password ${AC_PASS} -e "scan -t QueryAuditTable -b ${SDAY} -e ${EDAY}~ -np" | sed 's/T[0-9][0-9]:.* logicClass://g; s/, auditType:.*$//g' | sort | uniq -c | sort -nr |sort -nr > $OUTPUT_FILE
 `chmod 664 ${OUTPUT_FILE}`
 unique_query_logics=`cat ${OUTPUT_FILE} | awk '{print $3}' | sort | uniq | wc -l`
 if [[ "${BYDAY}" == "1" ]]; then

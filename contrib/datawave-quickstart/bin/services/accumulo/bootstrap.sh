@@ -54,15 +54,18 @@ DW_ACCUMULO_SYMLINK="accumulo"
 DW_ACCUMULO_INSTANCE_NAME="my-instance-01"
 DW_ACCUMULO_PASSWORD="${DW_ACCUMULO_PASSWORD:-secret}"
 
-alias ashell="accumulo shell -u root -p \${DW_ACCUMULO_PASSWORD}"
+# Accumulo 4 dropped the shell's short -p option; --password replaces it
+alias ashell="accumulo shell --user root --password \${DW_ACCUMULO_PASSWORD}"
 
-# Note that example configuration is provided for setting up VFS classpath for DataWave jars,
-# but it is disabled by default, as it doesn't really buy you anything on a standalone cluster.
-# To enable, set DW_ACCUMULO_VFS_DATAWAVE_ENABLED to true. If enabled, just be aware that
-# writing all the DataWave jars to HDFS will probably slow down your install significantly
-
+# Accumulo 4 removed VFS/context classloading (general.vfs.context.classpath.*);
+# DataWave jars are served from \${ACCUMULO_HOME}/lib/ext, which install.sh puts
+# on the server classpath in accumulo-env.sh
 DW_ACCUMULO_VFS_DATAWAVE_ENABLED=${DW_ACCUMULO_VFS_DATAWAVE_ENABLED:-false}
 DW_ACCUMULO_VFS_DATAWAVE_DIR="/datawave/accumulo-vfs-classpath"
+if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
+  warn "DW_ACCUMULO_VFS_DATAWAVE_ENABLED is not supported with Accumulo 4 (VFS classloading was removed); using lib/ext instead"
+  DW_ACCUMULO_VFS_DATAWAVE_ENABLED=false
+fi
 
 # accumulo.properties (Format: <property-name>=<property-value>{<newline>})
 
@@ -81,19 +84,11 @@ tserver.memory.maps.max=385M
 tserver.cache.data.size=64M
 tserver.cache.index.size=64M
 
-## Trace user
-trace.user=root
-
-## Trace password
-trace.password=${DW_ACCUMULO_PASSWORD}"
-
-if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
-  DW_ACCUMULO_PROPERTIES="${DW_ACCUMULO_PROPERTIES}
-general.vfs.context.classpath.datawave=${DW_HADOOP_DFS_URI_CLIENT}${DW_ACCUMULO_VFS_DATAWAVE_DIR}/.*.jar"
-else
-  DW_ACCUMULO_PROPERTIES="${DW_ACCUMULO_PROPERTIES}
-general.vfs.context.classpath.extlib=file://${ACCUMULO_HOME}/lib/ext/.*.jar"
-fi
+## Scan servers size their caches as a percentage of heap by default, which
+## outgrows the quickstart's small JVMs; pin them like the tserver caches
+sserver.cache.data.size=64M
+sserver.cache.index.size=64M
+sserver.cache.summary.size=32M"
 
 # shellcheck disable=SC2034
 DW_ACCUMULO_CLIENT_CONF="instance.name=${DW_ACCUMULO_INSTANCE_NAME}
@@ -118,7 +113,8 @@ DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="ps -ef | grep 'zookeeper.server.quorum.QuorumPee
 
 DW_ACCUMULO_CMD_START="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster start )"
 DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster stop )"
-DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'o.start.Main manager|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
+# Accumulo 4 runs server processes as 'accumulo proc <name>'; tracer is gone, sserver/compactor are new
+DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'o.start.Main proc manager|o.start.Main proc tserver|o.start.Main proc monitor|o.start.Main proc gc|o.start.Main proc sserver|o.start.Main proc compactor'"
 
 function bootstrapAccumulo() {
     if [ ! -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_DIST}" ]; then

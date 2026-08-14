@@ -54,6 +54,7 @@ import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 // Exclude this bean if the system property dw.security.use.testuserservice isn't defined to be true
 @Exclude(onExpression = "dw.security.use.testuserservice!=true", interpretedBy = NotEqualPropertyExpressionInterpreter.class)
 public class TestDatawaveUserService implements CachedDatawaveUserService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(TestDatawaveUserService.class);
     private Map<SubjectIssuerDNPair,DatawaveUser> cannedUsers = new HashMap<>();
     private DatawaveUserService delegateService;
     private CachedDatawaveUserService delegateCachedService;
@@ -179,7 +180,17 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
             return;
 
         // Read in the Accumulo authorizations so we can trim what was supplied in the test file.
-        List<String> accumuloAuthorizations = readAccumuloAuthorizations();
+        // This bean is created lazily during authentication (the Elytron evidence decoder), where no
+        // caller identity has been established yet, so the secured connection factory EJB may reject
+        // the call. Trimming is a safety net for test users only -- skip it rather than failing every
+        // authentication attempt.
+        List<String> readAuths = null;
+        try {
+            readAuths = readAccumuloAuthorizations();
+        } catch (Exception e) {
+            log.warn("Unable to read Accumulo authorizations ({}); test user auths will not be trimmed", e.getMessage());
+        }
+        final List<String> accumuloAuths = readAuths;
 
         // Use Jackson to de-serialize te JSON provided for each test user.
         ObjectMapper objectMapper = new ObjectMapper();
@@ -191,8 +202,10 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
                 // Strip off any authorizations not held by the designated Accumulo user.
                 ArrayList<String> auths = new ArrayList<>(user.getAuths());
                 HashMultimap<String,String> authMapping = HashMultimap.create(user.getRoleToAuthMapping());
-                auths.removeIf(a -> !accumuloAuthorizations.contains(a));
-                authMapping.entries().removeIf(e -> !accumuloAuthorizations.contains(e.getValue()));
+                if (accumuloAuths != null) {
+                    auths.removeIf(a -> !accumuloAuths.contains(a));
+                    authMapping.entries().removeIf(e -> !accumuloAuths.contains(e.getValue()));
+                }
 
                 user = new DatawaveUser(user.getDn(), user.getUserType(), user.getEmail(), auths, user.getRoles(), authMapping, user.getCreationTime(),
                                 user.getExpirationTime());
