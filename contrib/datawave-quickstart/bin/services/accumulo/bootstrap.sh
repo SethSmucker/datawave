@@ -60,8 +60,8 @@ DW_ACCUMULO_SYMLINK="accumulo"
 DW_ACCUMULO_INSTANCE_NAME="my-instance-01"
 DW_ACCUMULO_PASSWORD="${DW_ACCUMULO_PASSWORD:-secret}"
 
-# Accumulo 4 dropped the shell's -u/-p options; credentials come from accumulo-client.properties
-alias ashell="accumulo shell"
+# Accumulo 4 dropped the shell's short -p option; --password replaces it
+alias ashell="accumulo shell --user root --password \${DW_ACCUMULO_PASSWORD}"
 
 # Accumulo 4 removed VFS/context classloading (general.vfs.context.classpath.*);
 # DataWave jars are served from \${ACCUMULO_HOME}/lib/ext, which install.sh puts
