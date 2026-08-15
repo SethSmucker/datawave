@@ -782,3 +782,5 @@ public class TableConfigurationUtil {
         this.tableConfigCache.update();
     }
 }
+
+// CI baseline probe - no functional change
