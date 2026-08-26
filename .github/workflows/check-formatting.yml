@@ -2,6 +2,9 @@ name: Check Code Formatting
 
 on:
   workflow_call:
+  push:
+    branches:
+      - a4qs/ci-fmt-debug
 
 env:
   JAVA_VERSION: '17'
@@ -64,6 +67,19 @@ jobs:
       run: |
         if [[ "${{ github.event_name }}" != "merge_group" ]]; then
           mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" clean formatter:format sortpom:sort spotless:apply -Dmaven.build.cache.enabled=false -Pautoformat -Dutils -Dservices -Dstarters
+          echo "===== DEBUG: what is actually dirty ====="
+          echo "--- git status --porcelain ---"
+          git status --porcelain
+          echo "--- git diff --stat ---"
+          git diff --stat
+          echo "--- git diff-index HEAD (raw) ---"
+          git diff-index HEAD || true
+          echo "--- after update-index --refresh ---"
+          git update-index --refresh || true
+          git diff-index --quiet HEAD && echo "CLEAN after refresh" || echo "STILL DIRTY after refresh"
+          echo "--- first 200 lines of content diff ---"
+          git diff | head -200
+          echo "===== END DEBUG ====="
           if ! git diff-index --quiet HEAD; then
             echo "Code formatting issues detected. Please format locally.";
             exit 1;
