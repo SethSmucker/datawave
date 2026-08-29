@@ -16,7 +16,7 @@
  */
 package datawave.accumulo.inmemory;
 
-import static org.apache.accumulo.core.util.Validators.EXISTING_NAMESPACE_NAME;
+import static datawave.accumulo.inmemory.AccumuloValidators.EXISTING_NAMESPACE_NAME;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,8 +31,6 @@ import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.NamespaceNotEmptyException;
 import org.apache.accumulo.core.client.NamespaceNotFoundException;
 import org.apache.accumulo.core.clientImpl.NamespaceOperationsHelper;
-import org.apache.accumulo.core.util.Validators;
-import org.apache.accumulo.core.util.tables.TableNameUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +58,7 @@ class InMemoryNamespaceOperations extends NamespaceOperationsHelper {
 
     @Override
     public void create(String namespace) throws AccumuloException, AccumuloSecurityException, NamespaceExistsException {
-        Validators.NEW_NAMESPACE_NAME.validate(namespace);
+        AccumuloValidators.NEW_NAMESPACE_NAME.validate(namespace);
         if (exists(namespace))
             throw new NamespaceExistsException(namespace, namespace, "");
         else
@@ -85,7 +83,7 @@ class InMemoryNamespaceOperations extends NamespaceOperationsHelper {
 
         InMemoryNamespace n = acu.namespaces.get(oldNamespaceName);
         for (String t : n.getTables(acu)) {
-            String tt = newNamespaceName + "." + TableNameUtil.qualify(t).getSecond();
+            String tt = newNamespaceName + "." + AccumuloValidators.qualify(t).getRight();
             acu.tables.put(tt, acu.tables.remove(t));
         }
         acu.namespaces.put(newNamespaceName, acu.namespaces.remove(oldNamespaceName));
