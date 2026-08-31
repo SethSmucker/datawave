@@ -1,0 +1,121 @@
+# deliver-upstream — the fork-side Actions relay for /push-branch.
+#
+# WHY: managed Claude Code sessions cannot push to NationalSecurityAgency/datawave
+# at all — the session egress proxy TLS-intercepts github.com and replaces every
+# credential with the session's own (read-only on NSA). Proven 2026-08-05, see
+# vault notes/managed-session-github-creds.md. GitHub's runners sit outside that
+# proxy, so this workflow is where the UPSTREAM_PAT actually reaches GitHub.
+#
+# HOW: push-branch.sh (relay mode) force-pushes an orphan commit to the fork's
+# `delivery-relay` branch containing THIS file plus request/current.env (and
+# issue/pr text). The push event runs the workflow from that same commit — no
+# default-branch registration needed. Every action is double-pinned: the run
+# aborts if the fork source branch moved off the requested SHA, and the upstream
+# push is force-with-lease against the SHA captured at preview time.
+#
+# One-time setup: fork Settings -> Secrets and variables -> Actions ->
+# UPSTREAM_PAT = classic PAT (public_repo) of a datawave collaborator.
+#
+# This file is the template; the copy that runs lives in the relay commit.
+name: deliver-upstream
+
+on:
+  push:
+    branches:
+      - delivery-relay
+
+permissions: {}
+
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.UPSTREAM_PAT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Push requested commit upstream (lease-pinned)
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::UPSTREAM_PAT secret is not set (fork Settings -> Secrets and variables -> Actions)"
+            exit 1
+          fi
+          . request/current.env
+          echo "request: ${FORK_REPO}:${SRC_BRANCH} @ ${HEAD_SHA} -> ${WORK_REPO}:${UPSTREAM_BRANCH} (lease: ${LEASE_SHA:-none})"
+          git clone --bare --single-branch --branch "$SRC_BRANCH" \
+            "https://github.com/${FORK_REPO}" src.git
+          head=$(git -c core.bare=true --git-dir=src.git rev-parse "refs/heads/$SRC_BRANCH")
+          if [ "$head" != "$HEAD_SHA" ]; then
+            echo "::error::fork branch moved: $head != requested $HEAD_SHA — aborting"
+            exit 1
+          fi
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          pushopts=()
+          if [ -n "${LEASE_SHA:-}" ]; then
+            pushopts+=(--force-with-lease="refs/heads/${UPSTREAM_BRANCH}:${LEASE_SHA}")
+          fi
+          git --git-dir=src.git -c http.extraheader="AUTHORIZATION: basic $auth" \
+            push ${pushopts[@]+"${pushopts[@]}"} \
+            "https://github.com/${WORK_REPO}" "$HEAD_SHA:refs/heads/${UPSTREAM_BRANCH}"
+          echo "pushed: https://github.com/${WORK_REPO}/tree/${UPSTREAM_BRANCH}"
+
+      - name: Issue / draft PR / label / supersede
+        run: |
+          set -euo pipefail
+          . request/current.env
+          if [ "${PUSH_ONLY:-0}" = "1" ]; then
+            pnum=$(gh pr list --repo "$WORK_REPO" --state open \
+              --head "$UPSTREAM_BRANCH" --json number --jq '.[0].number' 2>/dev/null || true)
+            if [ -z "$pnum" ]; then
+              echo "::warning::push-only: no OPEN PR found for head $UPSTREAM_BRANCH"
+              exit 0
+            fi
+            echo "push-only: PR #$pnum re-runs CI on this push"
+            # Re-sync title/body from the delivery text so a reworked branch never
+            # keeps a description of the approach it replaced. REST, not gh pr edit:
+            # gh's GraphQL pre-queries need read:org, which the PAT does not have.
+            if [ "${SYNC_PR_TEXT:-0}" = "1" ] && [ -f request/pr.md ]; then
+              ptitle=$(sed -n '1{s/^#[[:space:]]*//;p}' request/pr.md)
+              sed '1d;1{/^$/d}' request/pr.md > /tmp/pr-body.md
+              gh api -X PATCH "repos/$WORK_REPO/pulls/$pnum" \
+                -f title="$ptitle" -f body="$(cat /tmp/pr-body.md)" >/dev/null \
+                && echo "PR #$pnum title/body re-synced from delivery text" \
+                || echo "::warning::could not re-sync PR #$pnum text"
+            fi
+            exit 0
+          fi
+          if [ "${NO_ISSUE:-0}" = "1" ]; then
+            inum=""
+            echo "issue skipped: --no-issue"
+          elif [ -n "${ISSUE_NUM:-}" ]; then
+            inum="$ISSUE_NUM"
+            echo "issue reused: https://github.com/${WORK_REPO}/issues/${inum}"
+          else
+            ititle=$(sed -n '1{s/^#[[:space:]]*//;p}' request/issue.md)
+            sed '1d' request/issue.md > /tmp/issue-body.md
+            iurl=$(gh issue create --repo "$WORK_REPO" --title "$ititle" --body-file /tmp/issue-body.md)
+            inum="${iurl##*/}"
+            echo "issue created: $iurl"
+          fi
+          ptitle=$(sed -n '1{s/^#[[:space:]]*//;p}' request/pr.md)
+          sed '1d' request/pr.md | sed "s/{{ISSUE}}/${inum}/g" > /tmp/pr-body.md
+          if [ -n "$inum" ] && ! grep -qiE "(clos(e|es|ed)|fix(es|ed)?|resolv(e|es|ed)|part of) #${inum}([^0-9]|\$)" /tmp/pr-body.md; then
+            printf 'Fixes #%s\n\n' "$inum" | cat - /tmp/pr-body.md > /tmp/pr-body2.md
+            mv /tmp/pr-body2.md /tmp/pr-body.md
+          fi
+          purl=$(gh pr create --repo "$WORK_REPO" --draft --base "${TARGET_BASE:-integration}" \
+            --head "$UPSTREAM_BRANCH" --title "$ptitle" --body-file /tmp/pr-body.md)
+          echo "draft PR created: $purl"
+          if [ -n "${LABEL:-}" ]; then
+            gh pr edit "$purl" --add-label "$LABEL" \
+              && echo "label applied: $LABEL" \
+              || echo "::warning::could not apply label '$LABEL' — add it on GitHub"
+          fi
+          if [ -n "${SUPERSEDE:-}" ]; then
+            pnum="${purl##*/}"
+            gh pr comment "$SUPERSEDE" --repo "$WORK_REPO" --body "Superseded by #${pnum}." || true
+            gh pr close "$SUPERSEDE" --repo "$WORK_REPO" \
+              && echo "superseded PR closed: #${SUPERSEDE}" \
+              || echo "::warning::could not close PR #${SUPERSEDE} — close it on GitHub"
+          fi
