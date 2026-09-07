@@ -60,3 +60,5 @@ services/sample_configuration/*-dev.yml
 
 # GitHub App credentials
 gha-creds-*.json
+
+# (no-op line for a fork CI compose baseline run; not for delivery)
