@@ -10,7 +10,11 @@ ZK_JARS=$(find "${ZOOKEEPER_HOME}/lib" -maxdepth 1 -name '*.jar' \
 # Put Accumulo's own libraries before an application-supplied classpath. The
 # DataWave ingest distribution intentionally exports its full job classpath;
 # prepending it would downgrade libraries required by the Accumulo launcher.
-CLASSPATH="${conf}:${lib}/*:${HADOOP_CONF_DIR}:${ZOOKEEPER_HOME}/*:${ZK_JARS}:/usr/lib/hadoop/client/*${CLASSPATH:+:${CLASSPATH}}"
+# lib/ext carries the jars datawave-extlib supplies (accumulo-access-core, and
+# netty-handler, which ZooKeeper 3.9's client needs in
+# ZKConfig.handleBackwardCompatibility). The servers pick it up via the
+# classloader; `accumulo shell` does not, so put it on CLASSPATH directly.
+CLASSPATH="${conf}:${lib}/*:${lib}/ext/*:${HADOOP_CONF_DIR}:${ZOOKEEPER_HOME}/*:${ZK_JARS}:/usr/lib/hadoop/client/*${CLASSPATH:+:${CLASSPATH}}"
 export CLASSPATH
 
 read -r -a accumulo_initial_opts < <(echo "${ACCUMULO_JAVA_OPTS:-}")

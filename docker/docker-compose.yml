@@ -242,6 +242,10 @@ services:
     environment:
       - HADOOP_CONF_DIR=/stack
     volumes:
+      # ZooKeeper 3.9's client touches io.netty.handler.ssl.SslContext during
+      # ZKConfig.handleBackwardCompatibility, so `accumulo shell` here needs
+      # netty-handler too - not just the Accumulo servers.
+      - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
       - ./stack:/stack:ro
       - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
       - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
