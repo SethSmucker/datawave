@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -64,7 +65,7 @@ public class FileAnnotationWriterTest {
      */
     @Test
     public void testDefaultPrefixProducesAnnotationNamedFiles() throws Exception {
-        java.nio.file.Path tempDir = Files.createTempDirectory("annotation-file-writer-naming-test");
+        Path tempDir = Files.createTempDirectory("annotation-file-writer-naming-test");
         try {
             AnnotationWriter writer = new FileAnnotationWriter.Builder<>().setPath("file://" + tempDir.toAbsolutePath()).build();
 
@@ -74,15 +75,15 @@ public class FileAnnotationWriterTest {
             assertTrue(result.isPresent(), "expected the write to succeed");
 
             // the Hadoop local file system also writes a hidden .crc checksum file next to each file
-            try (Stream<java.nio.file.Path> files = Files.list(tempDir)) {
-                List<java.nio.file.Path> writtenFiles = files.filter(p -> p.getFileName().toString().endsWith(".json")).collect(Collectors.toList());
+            try (Stream<Path> files = Files.list(tempDir)) {
+                List<Path> writtenFiles = files.filter(p -> p.getFileName().toString().endsWith(".json")).collect(Collectors.toList());
                 assertEquals(1, writtenFiles.size(), "expected exactly one file to have been written, but found: " + writtenFiles);
-                java.nio.file.Path writtenFile = writtenFiles.get(0);
+                Path writtenFile = writtenFiles.get(0);
                 assertTrue(writtenFile.getFileName().toString().startsWith("annotation-"),
                                 "expected the written file to be named with the annotation-specific prefix, but was: " + writtenFile.getFileName());
             }
         } finally {
-            try (Stream<java.nio.file.Path> walk = Files.walk(tempDir)) {
+            try (Stream<Path> walk = Files.walk(tempDir)) {
                 walk.sorted((a, b) -> b.compareTo(a)).forEach(p -> {
                     try {
                         Files.deleteIfExists(p);
@@ -103,7 +104,7 @@ public class FileAnnotationWriterTest {
     public void testConstructionDoesNotMutateGlobalLoginUser() throws Exception {
         UserGroupInformation loginUserBefore = UserGroupInformation.getLoginUser();
 
-        java.nio.file.Path tempDir = Files.createTempDirectory("annotation-file-writer-ugi-test");
+        Path tempDir = Files.createTempDirectory("annotation-file-writer-ugi-test");
         try {
             new FileAnnotationWriter.Builder<>().setPath("file://" + tempDir.toAbsolutePath()).setUser("someOtherImpersonatedUser").build();
 
@@ -111,7 +112,7 @@ public class FileAnnotationWriterTest {
             assertEquals(loginUserBefore.getUserName(), loginUserAfter.getUserName(),
                             "constructing a FileAnnotationWriter must not mutate the JVM-global Hadoop login user");
         } finally {
-            try (Stream<java.nio.file.Path> walk = Files.walk(tempDir)) {
+            try (Stream<Path> walk = Files.walk(tempDir)) {
                 walk.sorted((a, b) -> b.compareTo(a)).forEach(p -> {
                     try {
                         Files.deleteIfExists(p);
