@@ -36,7 +36,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.NamespacePermission;
 import org.apache.accumulo.core.security.SystemPermission;
 import org.apache.accumulo.core.security.TablePermission;
-import org.apache.accumulo.core.util.tables.TableNameUtil;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 
@@ -87,7 +86,7 @@ public class InMemoryAccumulo {
     }
 
     public void createTable(String username, String tableName, boolean useVersions, TimeType timeType, Map<String,String> properties) {
-        String namespace = TableNameUtil.qualify(tableName).getFirst();
+        String namespace = AccumuloValidators.qualify(tableName).getLeft();
 
         if (!namespaceExists(namespace)) {
             return;
@@ -102,7 +101,7 @@ public class InMemoryAccumulo {
     }
 
     public void createTable(String username, String tableName, TimeType timeType, Map<String,String> properties) {
-        String namespace = TableNameUtil.qualify(tableName).getFirst();
+        String namespace = AccumuloValidators.qualify(tableName).getLeft();
         HashMap<String,String> props = new HashMap<>(properties);
 
         if (!namespaceExists(namespace)) {

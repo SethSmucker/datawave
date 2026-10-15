@@ -67,8 +67,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
-import org.apache.accumulo.core.util.Validators;
-import org.apache.accumulo.core.util.tables.TableNameUtil;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -124,8 +122,8 @@ public class InMemoryTableOperations extends TableOperationsHelper {
 
     @Override
     public void create(String tableName, NewTableConfiguration ntc) throws AccumuloException, AccumuloSecurityException, TableExistsException {
-        String namespace = TableNameUtil.qualify(tableName).getFirst();
-        Validators.NEW_TABLE_NAME.validate(tableName);
+        String namespace = AccumuloValidators.qualify(tableName).getLeft();
+        AccumuloValidators.NEW_TABLE_NAME.validate(tableName);
         if (exists(tableName))
             throw new TableExistsException(tableName, tableName, "");
         checkArgument(namespaceExists(namespace), "Namespace (" + namespace + ") does not exist, create it first");
@@ -195,7 +193,7 @@ public class InMemoryTableOperations extends TableOperationsHelper {
         if ((!force) && exists(newTableName))
             throw new TableExistsException(newTableName, newTableName, "");
         InMemoryTable t = acu.tables.remove(oldTableName);
-        String namespace = TableNameUtil.qualify(newTableName).getFirst();
+        String namespace = AccumuloValidators.qualify(newTableName).getLeft();
         InMemoryNamespace n = acu.namespaces.get(namespace);
         if (n == null) {
             n = new InMemoryNamespace();
@@ -233,7 +231,7 @@ public class InMemoryTableOperations extends TableOperationsHelper {
 
     @Override
     public Map<String,String> getConfiguration(String tableName) throws AccumuloException, TableNotFoundException {
-        String namespace = TableNameUtil.qualify(tableName).getFirst();
+        String namespace = AccumuloValidators.qualify(tableName).getLeft();
         if (!exists(tableName)) {
             if (!namespaceExists(namespace))
                 throw new TableNotFoundException(tableName, new NamespaceNotFoundException(null, namespace, null));
