@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -102,9 +103,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private int maxIndexBatchSize = 1000;
     private boolean allTermsIndexOnly;
-    private long maxIndexScanTimeMillis = Long.MAX_VALUE;
-    private long maxAnyFieldScanTimeMillis = Long.MAX_VALUE;
-
+    /**
+     * Default is seven minutes, not unbounded, so a stalled scan cannot block query planning indefinitely.
+     */
+    private long maxIndexScanTimeMillis = TimeUnit.MINUTES.toMillis(7);
+    /**
+     * Default is seven minutes, not unbounded, so a stalled scan cannot block query planning indefinitely.
+     */
+    private long maxAnyFieldScanTimeMillis = TimeUnit.MINUTES.toMillis(7);
     @Deprecated
     private boolean useNewIndexLookups = false;
 
@@ -295,6 +301,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private String limitFieldsField = null;
     private boolean hitList = false;
+    private boolean stripHitTermGroupingContext = false;
     private boolean dateIndexTimeTravel = false;
     private boolean dateIndexIterator = false;
     private boolean ignoreNonExistentFields = false;
@@ -496,6 +503,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Document aggregations that exceed this threshold in milliseconds are logged as a warning
      */
     private int docAggregationThresholdMs = -1;
+    /**
+     * The maximum number of entries aggregated into a single document; a document is truncated and marked incomplete past this. Disabled if -1.
+     */
+    private int docAggregationMaxEntries = -1;
     /**
      * Term Frequency aggregations that exceed this threshold in milliseconds are logged as a warning
      */
@@ -722,6 +733,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
         this.setLimitFieldsField(other.getLimitFieldsField());
         this.setHitList(other.isHitList());
+        this.setStripHitTermGroupingContext(other.isStripHitTermGroupingContext());
         this.setDateIndexTimeTravel(other.isDateIndexTimeTravel());
         this.setDateIndexIterator(other.isDateIndexIterator());
         this.setBeginDateCap(other.getBeginDateCap());
@@ -831,6 +843,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
         this.setDocAggregationThresholdMs(other.getDocAggregationThresholdMs());
+        this.setDocAggregationMaxEntries(other.getDocAggregationMaxEntries());
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
         this.setPruneQueryOptions(other.getPruneQueryOptions());
@@ -2027,6 +2040,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.hitList = hitList;
     }
 
+    public boolean isStripHitTermGroupingContext() {
+        return this.stripHitTermGroupingContext;
+    }
+
+    public void setStripHitTermGroupingContext(boolean stripHitTermGroupingContext) {
+        this.stripHitTermGroupingContext = stripHitTermGroupingContext;
+    }
+
     public boolean isRawTypes() {
         return this.rawTypes;
     }
@@ -2866,6 +2887,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.docAggregationThresholdMs = docAggregationThresholdMs;
     }
 
+    public int getDocAggregationMaxEntries() {
+        return docAggregationMaxEntries;
+    }
+
+    public void setDocAggregationMaxEntries(int docAggregationMaxEntries) {
+        this.docAggregationMaxEntries = docAggregationMaxEntries;
+    }
+
     public int getTfAggregationThresholdMs() {
         return tfAggregationThresholdMs;
     }
@@ -3036,6 +3065,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isTermFrequenciesRequired() == that.isTermFrequenciesRequired() &&
                 isLimitFieldsPreQueryEvaluation() == that.isLimitFieldsPreQueryEvaluation() &&
                 isHitList() == that.isHitList() &&
+                isStripHitTermGroupingContext() == that.isStripHitTermGroupingContext() &&
                 isDateIndexTimeTravel() == that.isDateIndexTimeTravel() &&
                 getIgnoreNonExistentFields() == that.getIgnoreNonExistentFields() &&
                 getBeginDateCap() == that.getBeginDateCap() &&
@@ -3185,6 +3215,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getVisitorFunctionMaxWeight() == that.getVisitorFunctionMaxWeight() &&
                 getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout() &&
                 getDocAggregationThresholdMs() == that.getDocAggregationThresholdMs() &&
+                getDocAggregationMaxEntries() == that.getDocAggregationMaxEntries() &&
                 getTfAggregationThresholdMs() == that.getTfAggregationThresholdMs() &&
                 getPruneQueryOptions() == that.getPruneQueryOptions() &&
                 isSortQueryPreIndexWithImpliedCounts() == that.isSortQueryPreIndexWithImpliedCounts() &&
@@ -3325,6 +3356,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isLimitFieldsPreQueryEvaluation(),
                 getLimitFieldsField(),
                 isHitList(),
+                isStripHitTermGroupingContext(),
                 isDateIndexTimeTravel(),
                 getIgnoreNonExistentFields(),
                 getBeginDateCap(),
@@ -3421,6 +3453,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getVisitorFunctionMaxWeight(),
                 getQueryExecutionForPageTimeout(),
                 getDocAggregationThresholdMs(),
+                getDocAggregationMaxEntries(),
                 getTfAggregationThresholdMs(),
                 getPruneQueryOptions(),
                 isSortQueryPreIndexWithImpliedCounts(),
