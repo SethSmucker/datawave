@@ -33,13 +33,6 @@
     </properties>
     <dependencyManagement>
         <dependencies>
-        <!-- SB3 TRIAL ONLY: core classes (type-utils, base-rest-responses, ...) still use javax.xml.bind; this keeps them compiling. -->
-        <!-- Their JAXB annotations are ignored by the jakarta runtime, so this is not a real fix. -->
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.3.1</version>
-        </dependency>
             <!-- Don't sort the import scope dependencies. The first declared version of a dependency in dependencyManagement will prevail. -->
             <?SORTPOM IGNORE?>
             <!-- override the slf4j declarations in spring-boot-dependencies with our own version -->
