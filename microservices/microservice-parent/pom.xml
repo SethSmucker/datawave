@@ -73,13 +73,6 @@
     </properties>
     <dependencyManagement>
         <dependencies>
-        <!-- SB3 TRIAL ONLY: core classes (type-utils, base-rest-responses, ...) still use javax.xml.bind; this keeps them compiling. -->
-        <!-- Their JAXB annotations are ignored by the jakarta runtime, so this is not a real fix. -->
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.3.1</version>
-        </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.commons</groupId>
                 <artifactId>datawave-commons-security</artifactId>
@@ -228,6 +221,13 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <!-- SB3 TRIAL ONLY: core classes (type-utils, base-rest-responses, ...) still use javax.xml.bind; this keeps them compiling. -->
+        <!-- Their JAXB annotations are ignored by the jakarta runtime, so this is not a real fix. -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.1</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j2-impl</artifactId>
