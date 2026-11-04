@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.16-java17</version>
+        <version>5.0.16-SNAPSHOT</version>
         <relativePath>../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave</artifactId>
@@ -84,27 +84,27 @@
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-in-memory-accumulo</artifactId>
-                <version>${version.in-memory-accumulo}</version>
+                <version>4.0.7-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>accumulo-utils</artifactId>
-                <version>${version.datawave}</version>
+                <version>8.6.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
-                <version>${version.datawave}</version>
+                <version>8.6.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>common-utils</artifactId>
-                <version>${version.datawave}</version>
+                <version>8.6.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>metadata-utils</artifactId>
-                <version>${version.datawave}</version>
+                <version>8.6.0-SNAPSHOT</version>
                 <exclusions>
                     <exclusion>
                         <groupId>commons-logging</groupId>
@@ -119,17 +119,17 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>authorization-api</artifactId>
-                <version>${version.datawave.authorization-api}</version>
+                <version>4.0.7-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>metrics-reporter</artifactId>
-                <version>${version.datawave.metrics-reporter}</version>
+                <version>3.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave-cache</artifactId>
-                <version>${version.datawave.starter-cache}</version>
+                <version>4.0.6-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>

@@ -75,7 +75,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.commons</groupId>
                 <artifactId>datawave-commons-security</artifactId>
-                <version>${version.datawave-commons-security}</version>
+                <version>8.6.0-SNAPSHOT</version>
             </dependency>
             <!-- Don't sort the import scope dependencies. The first declared version of a dependency in dependencyManagement will prevail. -->
             <?SORTPOM IGNORE?>

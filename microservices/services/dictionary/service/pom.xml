@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.16-java17</version>
+        <version>5.0.16-SNAPSHOT</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dictionary-service</artifactId>
@@ -76,7 +76,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-in-memory-accumulo</artifactId>
-                <version>${version.in-memory-accumulo}</version>
+                <version>4.0.7-SNAPSHOT</version>
                 <scope>compile</scope>
                 <!-- ensure scope is compile as it is marked as test via other dependencies -->
                 <exclusions>
@@ -90,47 +90,47 @@
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>accumulo-utils</artifactId>
-                <version>${version.datawave}</version>
+                <version>8.6.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
-                <version>${version.datawave}</version>
+                <version>8.6.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>common-utils</artifactId>
-                <version>${version.datawave}</version>
+                <version>8.6.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>datawave-core-tables</artifactId>
-                <version>${version.datawave}</version>
+                <version>8.6.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>metadata-utils</artifactId>
-                <version>${version.datawave}</version>
+                <version>8.6.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>authorization-api</artifactId>
-                <version>${version.datawave.authorization-api}</version>
+                <version>4.0.7-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>dictionary-api</artifactId>
-                <version>${version.datawave.dictionary-api}</version>
+                <version>4.0.12-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave</artifactId>
-                <version>${version.datawave.starter}</version>
+                <version>4.0.14-java17-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave-metadata</artifactId>
-                <version>${version.datawave.starter-metadata}</version>
+                <version>3.0.8-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>

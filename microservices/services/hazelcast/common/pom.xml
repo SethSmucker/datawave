@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.16-java17</version>
+        <version>5.0.16-SNAPSHOT</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>hazelcast-common</artifactId>
@@ -29,12 +29,12 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave</artifactId>
-                <version>${version.datawave.starter}</version>
+                <version>4.0.14-java17-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave-cache</artifactId>
-                <version>${version.datawave.starter-cache}</version>
+                <version>4.0.6-SNAPSHOT</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

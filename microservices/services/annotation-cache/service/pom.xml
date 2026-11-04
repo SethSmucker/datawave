@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.16-java17</version>
+        <version>5.0.16-SNAPSHOT</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
 
@@ -41,7 +41,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>datawave-core-annotation</artifactId>
-                <version>${version.datawave}</version>
+                <version>8.6.0-SNAPSHOT</version>
                 <!-- Only the generated protobuf model is needed; annotation-messaging supplies its runtime. -->
                 <exclusions>
                     <exclusion>
@@ -53,22 +53,22 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>annotation-cache-api</artifactId>
-                <version>${version.datawave.annotation-cache-api}</version>
+                <version>1.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>annotation-messaging</artifactId>
-                <version>${version.datawave.annotation-messaging}</version>
+                <version>1.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>hazelcast-service</artifactId>
-                <version>${version.datawave.hazelcast-service}</version>
+                <version>4.0.8-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave</artifactId>
-                <version>${version.datawave.starter}</version>
+                <version>4.0.14-java17-SNAPSHOT</version>
                 <!-- Use the explicitly declared javax.annotation-api rather than duplicate JBoss annotations. -->
                 <exclusions>
                     <exclusion>

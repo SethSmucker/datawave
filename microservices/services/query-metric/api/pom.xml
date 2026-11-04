@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.14-java17</version>
+        <version>4.0.15-SNAPSHOT</version>
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-metric-api</artifactId>
@@ -62,12 +62,12 @@
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>accumulo-utils</artifactId>
-                <version>${version.datawave}</version>
+                <version>8.6.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
-                <version>${version.datawave}</version>
+                <version>8.6.0-SNAPSHOT</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>
@@ -78,7 +78,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-api</artifactId>
-                <version>${version.datawave.query-api}</version>
+                <version>1.0.5-SNAPSHOT</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>
@@ -89,7 +89,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-client</artifactId>
-                <version>${version.datawave}</version>
+                <version>8.6.0-SNAPSHOT</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>

@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.16-java17</version>
+        <version>5.0.16-SNAPSHOT</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>hazelcast-service</artifactId>
@@ -37,7 +37,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>hazelcast-common</artifactId>
-                <version>${version.datawave.hazelcast-common}</version>
+                <version>4.0.8-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
