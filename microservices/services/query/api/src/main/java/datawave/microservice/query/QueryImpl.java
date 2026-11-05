@@ -225,7 +225,8 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     @XmlElement
     protected String userDN;
     @XmlElement
-    @XmlJavaTypeAdapter(OptionallyEncodedStringAdapter.class)
+    // SB3 TRIAL ONLY: core adapter is javax; cannot be used with jakarta JAXB
+    // @XmlJavaTypeAdapter(OptionallyEncodedStringAdapter.class)
     @JsonSerialize(using = ToStringSerializer.class)
     protected String query;
     @XmlElement
