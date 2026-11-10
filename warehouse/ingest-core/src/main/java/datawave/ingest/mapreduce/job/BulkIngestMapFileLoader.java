@@ -80,6 +80,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private static int MAJC_CHECK_INTERVAL = 1;
     private static int MAJC_THRESHOLD = 3000;
     private static int MAJC_WAIT_TIMEOUT = 0;// 2 * 60 * 1000;
+    // how long to reuse the major compaction count before asking the compactors again
+    private static final long MAJC_COUNT_CACHE_TIME = 30 * 1000;
     private static int SHUTDOWN_PORT = 24111;
     protected static int NUM_CONSIDERED_BACKLOG = 9999;
     private static boolean FIFO = true;
@@ -112,6 +114,9 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private int failSleepTime;
     private boolean writeStats;
     private ImportMode importMode;
+    private long majcCountCacheTime = MAJC_COUNT_CACHE_TIME;
+    private int majorCompactionCount;
+    private long majorCompactionCountTime;
 
     public enum ImportMode {
         /**
@@ -137,7 +142,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         if (args.length < 6) {
             log.error("usage: BulkIngestMapFileLoader " + "hdfsWorkDir jobDirPattern instanceName zooKeepers username password "
                             + "[-sleepTime sleepTime (time in milliseconds to sleep between iterations)] "
-                            + "[-majcThreshold threshold (Number of majc compactions that will cause this loader to wait)] "
+                            + "[-majcThreshold threshold (Number of running major compactions that will cause this loader to wait)] "
                             + "[-majcCheckInterval count (number of iterations after which Major Compaction Threshold is checked)] "
                             + "[-majcDelay majcDelay (time in milliseconds to delay checking compaction threshold)] "
                             + "[-seqFileHdfs seqFileSystemUri (URI for the sequence file's HDFS)] "
@@ -336,7 +341,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         BULK_IMPORT_MODE = conf.getEnum(BULK_IMPORT_MODE_CONFIG, ImportMode.V2);
 
         log.info("Set sleep time to " + SLEEP_TIME + "ms");
-        log.info("Will wait to bring map files online if there are more than " + MAJC_THRESHOLD + " running or queued major compactions.");
+        log.info("Will wait to bring map files online if there are " + MAJC_THRESHOLD + " or more running major compactions.");
         log.info("Will not bring map files online unless at least " + MAJC_WAIT_TIMEOUT + "ms have passed since last time.");
         log.info("Will check the majcThreshold and majcDelay every " + MAJC_CHECK_INTERVAL + " bulk loads.");
         log.info("Processing a max of " + MAX_DIRECTORIES + " directories");
@@ -383,6 +388,19 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
     protected BulkIngestMapFileLoader() {
         // no-op. Use only for testing.
+    }
+
+    /**
+     * Use only for testing the major compaction checks.
+     *
+     * @param accumuloClient
+     *            the client to count major compactions with
+     * @param majcCountCacheTime
+     *            how long in ms to reuse the major compaction count
+     */
+    BulkIngestMapFileLoader(AccumuloClient accumuloClient, long majcCountCacheTime) {
+        this.accumuloClient = accumuloClient;
+        this.majcCountCacheTime = majcCountCacheTime;
     }
 
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
@@ -689,8 +707,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
     }
 
     /**
-     * Determines whether or not it is safe to bring map files online. This asks Accumulo for its stats for major compaction (running and queued), and will
-     * return false if either "too many" compactions are running/queued.
+     * Determines whether or not it is safe to bring map files online. This counts the major compactions Accumulo is running, and will return false if "too
+     * many" are running.
      *
      * @param lastOnlineTime
      *            the last online time
@@ -701,7 +719,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     public boolean canBringMapFilesOnline(long lastOnlineTime, boolean logInfo) {
         Level level = (logInfo ? Level.INFO : Level.DEBUG);
         int majC = getMajorCompactionCount();
-        log.log(level, "There are " + majC + " compactions currently running or queued.");
+        log.log(level, "There are " + majC + " major compactions currently running.");
 
         long delta = System.currentTimeMillis() - lastOnlineTime;
         log.log(level, "Time since map files last brought online: " + (delta / 1000) + "s");
@@ -709,9 +727,16 @@ public final class BulkIngestMapFileLoader implements Runnable {
         return (delta > MAJC_WAIT_TIMEOUT) && (majC < MAJC_THRESHOLD);
     }
 
-    private int getMajorCompactionCount() {
+    int getMajorCompactionCount() {
+        long now = System.currentTimeMillis();
+        if (majorCompactionCountTime > 0 && now - majorCompactionCountTime < majcCountCacheTime) {
+            return majorCompactionCount;
+        }
         try {
-            return AccumuloTableUtils.getMajorCompactionCount(accumuloClient);
+            // counting asks every compactor what it is running, which is expensive on a large cluster, so the count is reused for a while
+            majorCompactionCount = AccumuloTableUtils.getMajorCompactionCount(accumuloClient);
+            majorCompactionCountTime = now;
+            return majorCompactionCount;
         } catch (Exception e) {
             log.error("Unable to retrieve major compaction stats: " + e.getMessage());
             return 0;

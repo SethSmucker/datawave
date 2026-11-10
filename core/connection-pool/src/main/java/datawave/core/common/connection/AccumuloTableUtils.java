@@ -192,9 +192,8 @@ public final class AccumuloTableUtils {
      * @throws AccumuloException
      *             if a general Accumulo error occurs
      */
-    // ACCUMULO4_TODO this used to get running+queued compactions from the manager. getActiveCompactions() reaches out to every compactor and asks what it
-    // is compacting, and only reports running compactions. It would be better to get this from a place where the information is already summarized, like
-    // the metrics system, monitor, or manager. See apache/accumulo#4939.
+    // Accumulo 4 runs major compactions on the compactors, and its public API can only ask each compactor what it is running. Queued compactions are only
+    // visible in the manager's metrics, so they are not counted. This asks every compactor, so callers should not count on every pass of a loop.
     public static int getMajorCompactionCount(AccumuloClient client) throws AccumuloException {
         try {
             return (int) client.instanceOperations().getActiveCompactions(client.instanceOperations().getServers(ServerId.Type.COMPACTOR)).stream()
