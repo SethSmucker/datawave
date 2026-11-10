@@ -32,6 +32,7 @@ import org.apache.accumulo.core.client.IsolatedScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.RowIterator;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -77,6 +78,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloCache;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.common.util.ArgumentChecker;
@@ -513,7 +515,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static AccumuloClient getClient(Configuration conf) throws AccumuloException, AccumuloSecurityException, IOException {
         log.debug("Creating client with user: {}", getUsername(conf));
         if (conf.getBoolean(MOCK, false)) {
-            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), new InMemoryAccumulo(conf.get(INSTANCE_NAME)));
+            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf),
+                            InMemoryAccumuloCache.getDefault().getOrCreate(conf.get(INSTANCE_NAME)));
             client.securityOperations().changeLocalUserPassword(client.whoami(), new PasswordToken(getPassword(conf)));
             return client;
         } else {
@@ -1092,6 +1095,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 }
             } else {
                 try (AccumuloClient client = getClient(job.getConfiguration())) {
+                    TableId tableId = null;
                     clientTabletCache = getTabletLocator(job.getConfiguration());
                     // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
                     clientTabletCache.invalidateCache();
@@ -1099,9 +1103,18 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     ClientContext context = new ClientContext(info, ClientConfConverter.toAccumuloConf(info.getClientProperties()), Threads.UEH);
                     while (!clientTabletCache.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
-                            if (!client.tableOperations().isOnline(tableName)) {
-                                throw new TableOfflineException((TableId) null, tableName);
+                            var tops = client.tableOperations();
+                            String id = tops.tableIdMap().get(tableName);
+                            if (tableId == null) {
+                                if (id == null)
+                                    throw new TableDeletedException(tableName);
+                                tableId = TableId.of(id);
+                            } else if (!tableId.canonical().equals(id)) {
+                                // the table was deleted, or deleted and recreated under the same name
+                                throw new TableDeletedException(tableId.canonical());
                             }
+                            if (!tops.isOnline(tableName))
+                                throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
                         }
                         binnedRanges.clear();
                         log.warn("Unable to locate bins for specified ranges. Retrying.");

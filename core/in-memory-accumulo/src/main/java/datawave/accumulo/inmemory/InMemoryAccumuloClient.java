@@ -39,14 +39,32 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.SystemPermission;
 
-/**
- * In-memory implementation of {@link AccumuloClient} for testing. Does not connect to a real Accumulo instance.
- */
 public class InMemoryAccumuloClient implements AccumuloClient {
 
-    final String username;
+    String username;
     private final InMemoryAccumulo acu;
 
+    private ConditionalWriterConfig conditionalWriterConfig;
+    private volatile boolean closed = false;
+
+    /**
+     * Creates an InMemoryAccumuloClient with a new default InMemoryAccumulo.
+     *
+     * @param username
+     *            the username
+     */
+    public InMemoryAccumuloClient(String username) {
+        this(username, new InMemoryAccumulo());
+    }
+
+    /**
+     * Creates an InMemoryAccumuloClient with the provided InMemoryAccumulo.
+     *
+     * @param username
+     *            the username
+     * @param acu
+     *            the InMemoryAccumulo instance
+     */
     public InMemoryAccumuloClient(String username, InMemoryAccumulo acu) {
         this.username = username;
         this.acu = acu;
@@ -57,20 +75,20 @@ public class InMemoryAccumuloClient implements AccumuloClient {
         }
     }
 
-    /**
-     * Not supported by the in-memory implementation.
-     */
     @Override
-    public ConditionalWriter createConditionalWriter(String tableName) {
+    public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) throws TableNotFoundException {
+        // Intentionally unsupported - required for AccumuloClient interface but not used by DataWave
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * Not supported by the in-memory implementation.
-     */
-    @Override
-    public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) {
-        throw new UnsupportedOperationException();
+    public ConditionalWriter createConditionalWriter(String tableName) throws TableNotFoundException {
+        return this.createConditionalWriter(tableName, (ConditionalWriterConfig) null);
+    }
+
+    private void ensureOpen() {
+        if (this.closed) {
+            throw new IllegalStateException("This client was closed.");
+        }
     }
 
     @Override
