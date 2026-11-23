@@ -126,7 +126,8 @@ public class QueryMonitor {
                         k -> new LinkedHashMap<>());
                 // @formatter:on
 
-                String connectionPoolName = queryStatus.getConfig().getConnPoolName();
+                // the config is not set until the query has been created
+                String connectionPoolName = queryStatus.getConfig() != null ? queryStatus.getConfig().getConnPoolName() : null;
                 if (connectionPoolName == null) {
                     connectionPoolName = defaultConnectionPool;
                 }
