@@ -93,6 +93,8 @@ datawave:
       "[datawave.data.type.DateType]": "datawave.data.type.RawDateType"
 
   query:
+    defaultParams:
+      pool: 'pool1'
     poolLimits:
       'pool1': &defaultPoolLimits
         maxQueriesPerExecutor:
